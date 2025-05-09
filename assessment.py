@@ -3,55 +3,38 @@ from activity import Problem
 from average_speed_problems import AverageSpeed
 
 class Assessment:
-    SCHOOL = 'EEEM Erni Oscar Fauth'
-    SUBJECT = 'Física'
+    SCHOOL = 'Aula Particular'
+    SUBJECT = 'Física e Química'
     TEACHER = 'Me. Geovani L. Dias'
     QUARTER = 3
 
     CLASSROOMS = [
-        {'name': 111,
+        {'name': 'Remoto',
         'students_names': [
-            'Anieli Paola Pereira Sales',
-            'Antonia de Abreu Beck',
-            'Felipe Gabriel de Azevedo',
-            'Gabriel Santos da Silva',
-            'Ian Ferroni Brochier',
-            'Igor Silveira Nonnemacher',
-            'Isis Ramos de Souza',
-            'João Vitor Lenz Schneider',
-            'Júlio Cézar Moutinho',
-            'Laura Dickel',
-            'Lucas Henrique Scherer',
-            'Marcelo Renan da Motta',
-            'Maria Eduarda Ritter',
-            'Nayana Mayssa Machado da Silva',
-            'Ravél Manoel Pandolfo',
-            'Sophia de Souza Haubert',
-            'Vagner Henrique de Mello Vallada',
-            'Vitor Gomes Fetzner',
-            'Wesley Soares da Cunha']},
-        {'name': 112,
-        'students_names': [
-            'Alan Mateus Musskopf',
-            'Cleiton de Mattos Santos',
-            'Emily Gabriela da Rosa',
-            'Erick Alves Schmitzhaus',
-            'Ezequiel Lopes da Motta',
-            'Gabriel Henrique Herzer',
-            'Gabriel RIcardo Stahlhofer',
-            'Helen Talia Rodrigues da Borba',
-            'Lara Tabata Souza',
-            'Laura Stephanie Ritter',
-            'Leandro Santos de Oliveira',
-            'Liana Eduarda de Oliveira',
-            'Manuela de Souza Dill',
-            'Manuela Dorneles Gonçalves',
-            'Marina Kerber Buttenbender',
-            'Matheus Kaspar Pedroso',
-            'Natália Etzberger Klein',
-            'Pedro Henrique Schroeder',
-            'Roni José Cimadon',
-            'Talita Vitoria Silveira']}]
+            'Guilherme Leitte']}
+##        {'name': 112,
+##        'students_names': [
+##            'Alan Mateus Musskopf',
+##            'Cleiton de Mattos Santos',
+##            'Emily Gabriela da Rosa',
+##            'Erick Alves Schmitzhaus',
+##            'Ezequiel Lopes da Motta',
+##            'Gabriel Henrique Herzer',
+##            'Gabriel RIcardo Stahlhofer',
+##            'Hellen Talia Rodrigues da Borba',
+##            'Lara Tabata Souza',
+##            'Laura Stephanie Ritter',
+##            'Leandro Santos de Oliveira',
+##            'Liana Eduarda de Oliveira',
+##            'Manuela de Souza Dill',
+##            'Manuela Dorneles Gonçalves',
+##            'Marina Kerber Buttenbender',
+##            'Matheus Kaspar Pedroso',
+##            'Natália Etzberger Klein',
+##            'Pedro Henrique Schroeder',
+##            'Roni José Cimadon',
+##            'Talita Vitoria Silveira']}
+    ]
 
 
     @classmethod
@@ -61,7 +44,7 @@ class Assessment:
 
     @classmethod
     def footer(cls):
-        return '\n-----------------------------\n'
+        return '\n---\n'
 
 
     @classmethod
@@ -74,14 +57,14 @@ class Assessment:
 
 
     @classmethod
-    def generate(cls, quantity: int = 5):
+    def generate(cls, quantity: int = 30):
         school_answers = dict()
         for c in cls.CLASSROOMS:
             for s in c['students_names']:
                 school_answers[f"{c['name']}-{s}"] = list()
                 print(cls.header(s, c['name']))
                 for index in range(1, quantity+1):
-                    problem = AverageSpeed.SimpleVoyageProblem()
+                    problem = AverageSpeed.SectionCrossingProblem()
                     print(f'{index}) {cls.draw_item(problem)}')
                     school_answers[f"{c['name']}-{s}"].append(f'{index}) {problem.answer}')
                 print(cls.footer())

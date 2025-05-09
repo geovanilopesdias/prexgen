@@ -1,190 +1,208 @@
-import locale
 from random import choice, uniform
 from lexical import Lexical
 from unity import *
+from quantity import *
 from mobile import *
 from activity import Problem
 
-locale.setlocale(locale.LC_NUMERIC, 'pt_BR.UTF-8')
 
-class AverageSpeedProblem(Problem):
-    def __init__(self, ctx: str = '', todo: str = '', ans: str = '', var: dict = dict(), uni: dict = dict()):
-        super().__init__(ctx, todo, ans, var, uni)
+class AverageSpeed(Problem):   
+    def __init__(self, ctx: str = '', todo: str = '', uvk = '', ans: str = '', var: dict = dict(), uni: dict = dict()):
+        super().__init__(ctx, todo, uvk, ans, var, uni)
 
 
-    def set_random_variables(self, mobile_can_be_person: bool = True):
+    # ----- Variables setting:
+    def set_random_unities_and_variables(self, factory_name: str):
         """
-        Sets the base instance and random values for problems about average speed.
+        Sets the base instance and random values for problems about average speed
+        according to the static factory name passed.
         """
-        mobile = MobileOptions.randomMobile() if mobile_can_be_person else MobileOptions.randomMotorMobile()
-        speed = mobile.randomSpeedFor()
-        distance = mobile.randomDistanceFor()
-        self.variables = {'mobile': mobile, 'speed': speed, 'distance': distance, 'time': distance / speed}
-
-
-    def set_random_unities(self) -> dict:
-        """
-        Sets random unities base instance and random values for problems about average speed. Should be call after set_random_variables method.
-        """
-        unities = dict()
-        unities['distance'] = UnitiesTable.randomLengthUnity()
-        self.variables['distance'] = Unity.convertFromSI(self.variables['distance'], unities['distance'])
-        
-        unities['time'] = UnitiesTable.randomTimeUnity()
-        self.variables['time'] = Unity.convertFromSI(self.variables['time'], unities['time'])
-
-        unities['speed'] = UnitiesTable.randomSpeedUnity()
-        self.variables['speed'] = Unity.convertFromSI(self.variables['speed'], unities['speed'])
-        self.unities = unities
+        match factory_name:
+            case 'SimpleVoyage':
+                self.set_random_unities(('speed', 'distance', 'time'))
+                self.set_variables_for_simple_voyage()
+            case 'SectionCrossing':
+                self.set_random_unities(('speed', 'speed'))
+                self.set_variables_for_section_crossing()
+            case _:
+                raise ValueError(f"No method found for the factory '{factory_name}'")
 
     
-    def SimpleVoyageProblem(precision = 2) -> 'AverageSpeedProblem':
-        # Problem variables setting:
-        p = AverageSpeedProblem()
-        p.set_random_variables()
-        p.set_random_unities()
-        m = p.variables['mobile']
+    def set_variables_for_simple_voyage(self):
+        subject = MobileOptions.randomMobile(mobile_can_be_person = True)
+        speed = EscalarQuantity(round(subject.set_random_speed(), 1),
+                                UnitiesTable.METER_PER_SECOND, 'velocidade média', False)
+        distance = EscalarQuantity(round(subject.set_random_distance(), 1),
+                                   UnitiesTable.METER, 'distância', False)
+        time = EscalarQuantity(round(distance.value / speed.value, 1),
+                               UnitiesTable.SECOND, 'intervalo de tempo', True)
+        
+        speed.convert_to(self.unities['speed'])
+        distance.convert_to(self.unities['distance'])
+        time.convert_to(self.unities['time'])
 
-        # Problem variable values formating (r_f stands for "round and formatted with comma"):
-        r_f_distance = locale.format_string("%.2f", round(p.variables['distance'], precision), grouping=True)
-        r_f_time = locale.format_string("%.2f", round(p.variables['time'], precision), grouping=True)
-        r_f_speed = locale.format_string("%.2f", round(p.variables['speed'], precision), grouping=True)
+        self.variables = {'subject': subject, 'speed': speed, 'distance': distance, 'time': time}
 
-        # Problem structure definition:
-        unknown_var = choice(('distance', 'time', 'speed'))   
-        match unknown_var:
+
+    def set_variables_for_section_crossing(self):
+        subject = MobileOptions.randomMobile(mobile_can_be_person = False)        
+        subject_length = EscalarQuantity(
+            round(subject.set_random_length(), 1),
+            UnitiesTable.METER, 'comprimento', True)
+
+        section = choice((
+            {'name': 'ponte', 'is_male': False},
+            {'name': 'túnel', 'is_male': True},
+            {'name': 'trecho de faixa única', 'is_male': True},
+        ))
+        section_length = EscalarQuantity(
+            round(uniform(subject_length.value * 10, subject_length.value * 50), 1),
+            UnitiesTable.METER, 'comprimento', True)      
+
+        speed = EscalarQuantity(
+            round(subject.set_random_speed(), 1),
+            UnitiesTable.METER_PER_SECOND, 'velocidade média', False)
+        time = EscalarQuantity(
+            round((section_length.value + subject_length.value) / speed.value, 1),
+            UnitiesTable.SECOND, 'intervalo de tempo', True)
+        
+        speed.convert_to(self.unities['speed'])
+        self.variables = {'subject': subject, 'section_length': section_length, 'subject_length':subject_length, 'section': section, 'speed': speed, 'time': time}
+
+
+
+    # ----- Problem text body setting:
+    def set_todo_statement_and_answer(self):
+        """
+        Builds the to-do statement and answer. So, it can only be used after
+        set_random_unities_and_variables method.
+        """
+        if not self.unities or not self.variables:
+            raise ValueError('A problem text should be used only after problem variables AND unities are set.')            
+
+        self.unknown_variable_key = choice([k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)])
+        self.answer = f"{self.variables[self.unknown_variable_key]}"
+        
+        todo_statement_head = Lexical.random_inquisitive_pronoun() if self.is_inquisitive else Lexical.random_imperative_verb()
+        subject_reference = (
+            Lexical.pronoun(self.variables['subject'].is_male)
+            if self.does_context_come_first
+            else f"{Lexical.undefined_article(self.variables['subject'].is_male)} {self.variables['subject'].name}"
+        )
+
+        unk_var = self.variables[self.unknown_variable_key]
+
+        #  FUNCIONA APENAS PARA SIMPLE VOYAGE; SECTION CROSSING PODE TER NO FINAL ALGO COMO "QUE COMPRIMENTO POSSUI"
+        self.todo_statement = (
+                f"{todo_statement_head} {Lexical.defined_article(unk_var.is_male)} "
+                f"{unk_var.name} (em {unk_var.unity.value.symbol}) "
+                f"que {subject_reference} {Lexical.random_motion_verb(self.variables['subject'].type)}")
+
+
+    def set_context_phrase_for(self, factory_name: str):
+        """
+        Sets the instance's context phrase for problems about average speed
+        according to the static factory name passed.
+        """
+        if not self.unities or not self.variables:
+            raise ValueError('A problem text should be used only after problem variables AND unities are set.')
+        
+        match factory_name:
+            case 'SimpleVoyage':
+                self.set_context_phrase_for_simple_voyage()
+            case 'SectionCrossing':
+                self.set_context_phrase_for_section_crossing()
+            case _:
+                raise ValueError(f"No method found for the factory '{factory_name}'")
+
+
+    def set_context_phrase_for_simple_voyage(self):
+        subject = self.variables['subject']
+        context_phrase_head = (
+            f"{Lexical.undefined_article(subject.is_male)} {subject.name}"
+            if self.does_context_come_first
+            else f"{Lexical.random_condition_articulator()} {Lexical.pronoun(subject.is_male)}"
+        )
+        
+        match self.unknown_variable_key:
+            case 'speed':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_motion_verb(subject.type)} {Lexical.random_distance_adverb()} "
+                    f"{self.variables['distance']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
+                
             case 'distance':
-                if p.does_context_come_first:
-                    phrase = f"{Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol}. {Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol},"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-
-                else:
-                    phrase = f"{Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol}"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-
-                answer = f"Resposta: {r_f_distance} {p.unities[unknown_var].symbol}."
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_verb_to_present('speed', subject.type)} "
+                    f"{self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
 
             case 'time':
-                if p.does_context_come_first:
-                    phrase = f"{Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol}. {Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)} {Lexical.random_distance_adverb()} {r_f_distance} {p.unities['distance'].symbol},"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_verb_to_present('speed', subject.type)} "
+                    f"{self.variables['speed']} {Lexical.random_distance_adverb()} {self.variables['distance']}"
+                )
 
-                else:
-                    phrase = f"{Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol} {Lexical.random_distance_adverb()} {r_f_distance} {p.unities['distance'].symbol}"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                answer = f"Resposta: {r_f_time} {p.unities[unknown_var].symbol}."
 
-            case 'speed':
-                if p.does_context_come_first:
-                    phrase = f"{Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)} {Lexical.random_distance_adverb()} {r_f_distance} {p.unities['distance'].symbol} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol}."
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} velocidade média (em {p.unities[unknown_var].symbol}) com a qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} velocidade média (em {p.unities[unknown_var].symbol}) com a qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
+    def set_context_phrase_for_section_crossing(self):
+        subject = self.variables['subject']  # instance of Mobile
+        sub_len = self.variables['subject_length']  # instance of EscalarQuantity
+        section = self.variables['section']  # dict
+        sec_len = self.variables['section_length']
+        context_phrase_head = (
+            f"{Lexical.undefined_article(subject.is_male)} {subject.name}"
+            if self.does_context_come_first
+            else f"{Lexical.random_condition_articulator()} {Lexical.pronoun(subject.is_male)}"
+        )
 
-                else:
-                    phrase = f"{Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_verb_to_present('distance', m.type)} {r_f_distance} {p.unities['distance'].symbol} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol}"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} velocidade média (em {p.unities[unknown_var].symbol}) com que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} velocidade média (em {p.unities[unknown_var].symbol}) com que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                answer = f"Resposta: {r_f_speed} {p.unities[unknown_var].symbol}."
+        match self.unknown_variable_key:
+            case 'speed':  # The flexy nature of two variable names make match/case block unfeasible...
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
+                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])}"
+                    f"{section['name']} de {sec_len} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
 
-        p.context_phrase = phrase
-        p.todo_statement = statement
-        p.answer = answer
-        return p
+            case 'section_length':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
+                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])}"
+                    f"{section['name']} a {self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
 
-    # ADAPTAR STATEMENT E PHRASE!
-    def SectionCrossingProblem(precision = 2) -> 'AverageSpeedProblem':
-        """
-        Draws a problem of bridge (or else) crossing.
-        """
-        # Problem variables setting:
-        p = AverageSpeedProblem()
-        p.set_random_variables(mobile_can_be_person = False)
-        p.set_random_unities()
-        m = p.variables['mobile']
-        mobile_length = m.randomLengthFor()  # Meter
-        section = choice(({'name': 'ponte', 'is_male': False}, {'name': 'túnel', 'is_male': True}))
-        section['length'] = uniform(10, 100)  # Meter
-        
-
-        # Problem variable values formating (r_f stands for "round and formatted with comma"):
-        r_f_distance = locale.format_string("%.2f", round(p.variables['distance'], precision), grouping=True)
-        r_f_time = locale.format_string("%.2f", round(p.variables['time'], precision), grouping=True)
-        r_f_speed = locale.format_string("%.2f", round(p.variables['speed'], precision), grouping=True)
-
-        # Problem structure definition:
-        unknown_var = choice(('distance', 'time', 'speed'))            
-        match unknown_var:
-            case 'distance':
-                if p.does_context_come_first:
-                    phrase = f"{Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol}. {Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol},"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-
-                else:
-                    phrase = f"{Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol}"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} distância (em {p.unities[unknown_var].symbol}) que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-
-                answer = f"Resposta: {r_f_distance} {p.unities[unknown_var].symbol}."
+            case 'subject_length':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
+                    f"{section['name']} de {sec_len} a {self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
 
             case 'time':
-                if p.does_context_come_first:
-                    phrase = f"{Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol}. {Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)} {Lexical.random_distance_adverb()} {r_f_distance} {p.unities['distance'].symbol},"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
+                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
+                    f"{section['name']} de {sec_len} a {self.variables['speed']}"
+                )
 
-                else:
-                    phrase = f"{Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_verb_to_present('speed', m.type)} {r_f_speed} {p.unities['speed'].symbol} {Lexical.random_distance_adverb()} {r_f_distance} {p.unities['distance'].symbol}"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(True)} tempo (em {p.unities[unknown_var].symbol}) durante o qual {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                answer = f"Resposta: {r_f_time} {p.unities[unknown_var].symbol}."
 
-            case 'speed':
-                if p.does_context_come_first:
-                    phrase = f"{Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)} {Lexical.random_distance_adverb()} {r_f_distance} {p.unities['distance'].symbol} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol}."
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} velocidade média (em {p.unities[unknown_var].symbol}) com a qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} velocidade média (em {p.unities[unknown_var].symbol}) com a qual {Lexical.pronoun(m.is_male)} {Lexical.random_motion_verb(m.type)}"
-
-                else:
-                    phrase = f"{Lexical.random_condition_articulator()} {Lexical.pronoun(m.is_male)} {Lexical.random_verb_to_present('distance', m.type)} {r_f_distance} {p.unities['distance'].symbol} {Lexical.random_interval_adverb()} {r_f_time} {p.unities['time'].symbol}"
-                    if p.is_inquisitive:                    
-                        statement = f"{Lexical.random_inquisitive_pronoun(False)} velocidade média (em {p.unities[unknown_var].symbol}) com que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                    else:
-                        statement = f"{Lexical.random_imperative_verb(False)} velocidade média (em {p.unities[unknown_var].symbol}) com que {Lexical.undefined_article(m.is_male)} {m.name} {Lexical.random_motion_verb(m.type)},"
-                answer = f"Resposta: {r_f_speed} {p.unities[unknown_var].symbol}."
-
-        p.context_phrase = phrase
-        p.todo_statement = statement
-        p.answer = answer
+    # ----- Factory methods:
+    def SimpleVoyageProblem() -> 'AverageSpeed':
+        p = AverageSpeed()
+        p.set_random_unities_and_variables(factory_name = 'SimpleVoyage')
+        p.set_todo_statement_and_answer()
+        p.set_context_phrase_for('SimpleVoyage')
         return p
 
 
-for c in range(0, 20):
-    print(f'{c+1}) {AverageSpeedProblem.RandomProblem().for_exhibition()} \n')
-        
+    #Funciona, mas precisa adaptar o todo statement para comportar o comprimento apropriadamente.
+    def SectionCrossingProblem() -> 'AverageSpeed':
+        p = AverageSpeed()
+        p.set_random_unities_and_variables(factory_name = 'SectionCrossing')
+        p.set_todo_statement_and_answer()
+        p.set_context_phrase_for('SectionCrossing')
+        return p
+
+
+
+for c in range(1, 101):
+    p = AverageSpeed.SectionCrossingProblem()
+    print(f'{c}) {p}')
