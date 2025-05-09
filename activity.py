@@ -1,15 +1,13 @@
 from lexical import Lexical
-from unity import UnitiesTable, Unity
 from random import choice
 
 class Problem():
-    def __init__(self, ctx: str = '', todo: str = '', uvk: str = '', ans: str = '', var: dict = dict(), uni: dict = dict()):
+    def __init__(self, ctx: str = '', todo: str = '', uvk: str = '', ans: str = '', var: dict = dict()):
         self.context_phrase = ctx
         self.todo_statement = todo
         self.unknown_variable_key = uvk
         self.answer = ans
         self.variables = var
-        self.unities = uni
         self.does_context_come_first = choice((True, False))
         self.is_inquisitive = choice((True, False))
 
@@ -33,10 +31,6 @@ class Problem():
 
     def set_random_variables():
         raise NotImplementedError
-
-
-    def set_random_unities(self, variables):
-        self.unities = {key: UnitiesTable.randomUnity(key) for key in variables}
     
 
     def set_formated_quantities(self):

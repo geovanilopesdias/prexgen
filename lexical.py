@@ -37,7 +37,7 @@ class Lexical:
 
 
     def random_attribute_indicator_verb():
-        return choice(('tem', 'possui', 'apresenta', 'exibe'))
+        return choice(('tem', 'possui'))
 
 
     def random_crossing_verb():
@@ -46,10 +46,11 @@ class Lexical:
 
     def random_motion_verb(mob_type: 'MobileTypes'):
         if mob_type == MobileTypes.MOTOR:
-            verbs = ('viaja', 'anda')
+            verbs = ('viaja', 'translada', 'transita', 'trafega')
         else:
             verbs = ('anda', 'se move')
         return choice(verbs)
+
 
     # ----- Random adverbs
     def random_completeness_adverb():
