@@ -6,6 +6,10 @@ import locale
 locale.setlocale(locale.LC_NUMERIC, 'pt_BR.UTF-8')
 
 class Lexical:
+    """
+    Service class to encapsulate grammar and syntactic functions and rafflers for different
+    syntactic expressions.
+    """
     def capitalize_after_punctuation(phrase: str):
         punc_filter = re.compile('([.!?]\s*)')
         splitted_phrase = punc_filter.split(phrase)
@@ -67,6 +71,14 @@ class Lexical:
 
     def random_condition_articulator():
         return choice(('se', 'supondo que', 'pressupondo que', 'sabendo que', 'considerando que', 'admitindo que'))
+
+
+    def random_contrast_marker() -> str:
+        """
+        It raffles a adverb or a adverbial locution that serves as a contrast marker
+        that can be used in a sentence both right before or after the subject.
+        """
+        return choice(('por sua vez', 'porém', 'entretanto', 'contudo', 'todavia', 'no entanto'))
     
 
 

@@ -2,12 +2,15 @@ from random import choice
 from enum import Enum
 
 class UnitType(Enum):
+    DIMENSIONLESS = ''
     LENGTH = 'comprimento'
     TIME = 'tempo'
     SPEED = 'velocidade'
     ACCELERATION = 'aceleração'
     MASS = 'massa'
     VOLUME = 'volume'
+    FORCE = 'força'
+    PRESSURE = 'pressão'
     ENERGY = 'energia'
 
 
@@ -26,6 +29,8 @@ class Unity:
     
 
 class UnitiesTable(Enum):
+    DIMENSIONLESS = Unity('', '', UnitType.DIMENSIONLESS, 1.0)
+    
     METER = Unity('metro', 'm', UnitType.LENGTH, 1.0)
     MILE = Unity('milhas', 'mi', UnitType.LENGTH, 1_609.34)
     CENTIMETER = Unity('centímetro', 'cm', UnitType.LENGTH, 1e-2)
@@ -47,6 +52,8 @@ class UnitiesTable(Enum):
     GRAM = Unity('quilograma', 'kg', UnitType.MASS, 1e-3)
     MILIGRAM = Unity('quilograma', 'kg', UnitType.MASS, 1e-6)
     METRIC_TONNE = Unity('tonelada', 'ton', UnitType.MASS, 1e3)
+
+    NEWTON = Unity('newton', 'N', UnitType.FORCE, 1.0)
 
     JOULE = Unity('joule', 'J', UnitType.ENERGY, 1.0)
     

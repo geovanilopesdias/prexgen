@@ -3,18 +3,29 @@ from lexical import Lexical
 from unity import *
 from quantity import *
 from mobile import *
-from activity import Problem
+from problem import Problem
 
+# To-do list:
+### DifferenceInTravelTimes appears to not drawing variables coherently (the calculations are wrong).
+### Test wether TwiceStretchRoad is randomizing variables coherently.
 
 class AverageSpeed(Problem):   
+    """
+    Abstracts situational problems solveble by the definition of average speed,
+    i.e., the equation v = d/t. It currrently can draw up to 240 (3*4*4*5) different
+    problems, regardless of the variable values and unities randomization.
+    """
+    FACTORIES = ('SimpleVoyage', 'SectionCrossing', 'DifferenceInTravelTimes', 'TwiceStretchRoad')
+
     def __init__(self, ctx: str = '', todo: str = '', uvk = '', ans: str = '', var: dict = dict()):
         super().__init__(ctx, todo, uvk, ans, var)
 
+
     # ----- Variables setting:    
-    def set_random_unities_and_variables(self, factory_name: str):
+    def set_random_variables(self, factory_name: str):
         """
         Sets the base instance and random values for problems about average speed
-        according to the static factory name passed.
+        according to the factory name passed.
         """
         match factory_name:
             case 'SimpleVoyage':
@@ -23,6 +34,8 @@ class AverageSpeed(Problem):
                 self.set_variables_for_section_crossing()
             case 'DifferenceInTravelTimes':
                 self.set_variables_for_difference_in_travel_times()
+            case 'TwiceStretchRoad':
+                self.set_variables_for_twice_stretch_road()
             case _:
                 raise ValueError(f"No method found for the factory '{factory_name}'")
 
@@ -46,7 +59,7 @@ class AverageSpeed(Problem):
             round(subject.set_random_length(), 1),
             UnitiesTable.METER, 'comprimento', True)
 
-        section = choice((
+        section = choice((  # There should be options feasible to both trains and cars/trucks!
             {'name': 'ponte', 'is_male': False},
             {'name': 'túnel', 'is_male': True}
         ))
@@ -57,6 +70,7 @@ class AverageSpeed(Problem):
         speed = EscalarQuantity(
             round(subject.set_random_speed(), 1),
             UnitiesTable.METER_PER_SECOND, 'velocidade média', False)
+        
         time = EscalarQuantity(
             round((section_length.value + subject_length.value) / speed.value, 1),
             UnitiesTable.SECOND, 'intervalo de tempo', True)
@@ -88,16 +102,68 @@ class AverageSpeed(Problem):
             'distance': distance, 'time_difference': time_difference
             }
         EscalarQuantity.adapt_all_unities_in(self.variables)
+        self.variables['lower_speed'].convert_to(higher_speed.unity)  # Set both speeds in the same unity avoids unessesary complexity.
+
+
+    def set_variables_for_twice_stretch_road(self):
+        subject = MobileOptions.randomMobile(mobile_can_be_person = False)
+
+        speed_a = EscalarQuantity(
+            round(subject.set_random_speed(), 1),
+            UnitiesTable.METER_PER_SECOND, 'velocidade do trecho A', False)
+
+        speed_b = EscalarQuantity(
+            round(subject.set_random_speed(), 1),
+            UnitiesTable.METER_PER_SECOND, 'velocidade do trecho B', False)
+
+        distance_a = EscalarQuantity(
+            round(subject.set_random_distance(), 1),
+            UnitiesTable.METER, 'distância do trecho A', False)
+
+        distance_b = EscalarQuantity(
+            round(subject.set_random_distance(), 1),
+            UnitiesTable.METER, 'distância do trecho B', False)
+
+        time_a = EscalarQuantity(
+            round(distance_a.value / speed_a.value, 1),
+            UnitiesTable.SECOND, 'intervalo de tempo do trecho A', True)
+
+        time_b = EscalarQuantity(
+            round(distance_b.value / speed_b.value, 1),
+            UnitiesTable.SECOND, 'intervalo de tempo do trecho B', True)
+        
+        average_speed = EscalarQuantity(
+            round((distance_a.value + distance_b.value) / (time_a.value + time_b.value), 1),
+            UnitiesTable.METER_PER_SECOND, 'velocidade média', False)
+        
+        distance_a.adapt_unity_randomly()
+        time_b.adapt_unity_randomly()
+        # To set drawable variables of the same type with the same unity avoids unnecessary complexity:
+        speed_a.adapt_unity_randomly()
+        speed_b.convert_to(speed_a.unity)
+        average_speed.convert_to(speed_a.unity)
+        
+        self.variables = {
+            'subject': subject, 'average_speed': average_speed, 'speed_a': speed_a, 'speed_b': speed_b,
+            'distance_a': distance_a, 'distance_b': distance_b, 'time_a': time_a, 'time_b': time_b
+            }
         
 
+    def raffle_unknown_variable_key(self, factory_name: str):
+        match factory_name:
+            case 'TwiceStretchRoad':
+                key_options = ('average_speed', 'speed_a', 'speed_b', 'distance_a', 'time_b')
+            case _:
+                key_options = [k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)]
+        self.unknown_variable_key = choice(key_options)
+    
 
     # ----- Problem text body setting:
     def set_todo_statement_and_answer(self):
         """
         Builds the to-do statement and answer. So, it can only be used after
         set_random_unities_and_variables method.
-        """
-        self.unknown_variable_key = choice([k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)])
+        """       
         self.answer = f"{self.variables[self.unknown_variable_key]}"
         
         todo_statement_head = Lexical.random_inquisitive_pronoun() if self.is_inquisitive else Lexical.random_imperative_verb()
@@ -132,6 +198,8 @@ class AverageSpeed(Problem):
                 self.set_context_phrase_for_section_crossing()
             case 'DifferenceInTravelTimes':
                 self.set_context_phrase_for_difference_in_travel_times()
+            case 'TwiceStretchRoad':
+                self.set_context_phrase_for_twice_stretch_road()
             case _:
                 raise ValueError(f"No method found for the factory '{factory_name}'")
 
@@ -238,32 +306,76 @@ class AverageSpeed(Problem):
                 )
 
 
-    # ----- Factory methods:
-    def SimpleVoyageProblem() -> 'AverageSpeed':
+    def set_context_phrase_for_twice_stretch_road(self):
+        self.does_context_come_first = True  # So problem texts shall be simpler/clearer.
+        subject = self.variables['subject']
+        context_first_sentence = (
+            f"{Lexical.undefined_article(subject.is_male)} {subject.name} {Lexical.random_motion_verb(subject.type)} "
+            f"{Lexical.random_distance_adverb()} dois trechos A e B. "
+        )
+
+        match self.unknown_variable_key:
+            case 'average_speed':
+                self.context_phrase = (
+                    f"{context_first_sentence} No trecho A, {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_a']} "
+                    f"{Lexical.random_distance_adverb()} {self.variables['distance_a']}; {Lexical.random_contrast_marker()} "
+                    f"no trecho B {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_b']} "
+                    f"{Lexical.random_interval_adverb()} {self.variables['time_b']}. "
+                )
+            
+            case 'speed_a':
+                self.context_phrase = (
+                    f"{context_first_sentence} No trecho A, {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} "
+                    f"{Lexical.random_distance_adverb()} {self.variables['distance_a']}; {Lexical.random_contrast_marker()} "
+                    f"no trecho B {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_b']} "
+                    f"{Lexical.random_interval_adverb()} {self.variables['time_b']}. "
+                    f"{Lexical.random_condition_articulator()} a sua {self.variables['average_speed'].name} é de {self.variables['average_speed']}, "
+                )
+            
+            case 'speed_b':
+                self.context_phrase = (
+                    f"{context_first_sentence}  No trecho A, {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_a']} "
+                    f"{Lexical.random_distance_adverb()} {self.variables['distance_a']}; {Lexical.random_contrast_marker()} "
+                    f"no trecho B {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} "
+                    f"{Lexical.random_interval_adverb()} {self.variables['time_b']}. "
+                    f"{Lexical.random_condition_articulator()} a sua {self.variables['average_speed'].name} é de {self.variables['average_speed']}, "
+                )
+            
+            case 'distance_a':
+                self.context_phrase = (
+                    f"{context_first_sentence} No trecho A, {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_a']}; "
+                    f"{Lexical.random_contrast_marker()} "
+                    f"no trecho B {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_b']} "
+                    f"{Lexical.random_interval_adverb()} {self.variables['time_b']}. "
+                    f"{Lexical.random_condition_articulator()} a sua {self.variables['average_speed'].name} é de {self.variables['average_speed']}, "
+                )
+            
+            case 'time_b':
+                self.context_phrase = (
+                    f"{context_first_sentence} No trecho A, {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_a']} "
+                    f"{Lexical.random_distance_adverb()} {self.variables['distance_a']}; {Lexical.random_contrast_marker()} "
+                    f"no trecho B {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_b']}. "
+                    f"{Lexical.random_condition_articulator()} a sua {self.variables['average_speed'].name} é de {self.variables['average_speed']}, "
+                )
+
+
+    @classmethod
+    def ProblemFactory(cls, factory_name: str) -> 'AverageSpeed':
+        if factory_name not in cls.FACTORIES:
+            raise ValueError(f"No method found for the factory '{factory_name}'")
         p = AverageSpeed()
-        p.set_random_unities_and_variables(factory_name = 'SimpleVoyage')
+        p.set_random_variables(factory_name)
+        p.raffle_unknown_variable_key(factory_name)
         p.set_todo_statement_and_answer()
-        p.set_context_phrase_for('SimpleVoyage')
+        p.set_context_phrase_for(factory_name)
         return p
 
 
-    #Funciona, mas precisa adaptar o todo statement para comportar o comprimento apropriadamente.
-    def SectionCrossingProblem() -> 'AverageSpeed':
-        p = AverageSpeed()
-        p.set_random_unities_and_variables(factory_name = 'SectionCrossing')
-        p.set_todo_statement_and_answer()
-        p.set_context_phrase_for('SectionCrossing')
-        return p
+# ----- Tests:
+for n in range(10):
+    p = AverageSpeed.ProblemFactory('TwiceStretchRoad')
+    print(f'{n+1}) {p}')
 
 
-    def DifferenceInTravelTimesProblem() -> 'AverageSpeed':
-        p = AverageSpeed()
-        p.set_random_unities_and_variables(factory_name = 'DifferenceInTravelTimes')
-        p.set_todo_statement_and_answer()
-        p.set_context_phrase_for('DifferenceInTravelTimes')
-        return p
-
-
-for c in range(1, 101):
-    p = AverageSpeed.RandomProblem()
-    print(f'{c}) {p}')
+#for n, p in enumerate(problems):
+    #print(f'{n+1}) {p}')
