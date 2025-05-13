@@ -1,7 +1,7 @@
-from random import choice
-from mobile import MobileTypes
 import re
 import locale
+from random import choice
+from .mobile import MobileTypes
 
 locale.setlocale(locale.LC_NUMERIC, 'pt_BR.UTF-8')
 

@@ -1,13 +1,13 @@
 from random import choice, uniform
-from lexical import Lexical
-from unity import *
-from quantity import *
-from mobile import *
-from problem import Problem
+from .problem import Problem
+from services.quantity import EscalarQuantity
+from services.lexical import Lexical
+from services.unity import *
+from services.mobile import *
+
 
 # To-do list:
 ### DifferenceInTravelTimes appears to not drawing variables coherently (the calculations are wrong).
-### Test wether TwiceStretchRoad is randomizing variables coherently.
 
 class AverageSpeed(Problem):   
     """
@@ -15,31 +15,13 @@ class AverageSpeed(Problem):
     i.e., the equation v = d/t. It currrently can draw up to 240 (3*4*4*5) different
     problems, regardless of the variable values and unities randomization.
     """
-    FACTORIES = ('SimpleVoyage', 'SectionCrossing', 'DifferenceInTravelTimes', 'TwiceStretchRoad')
+    FACTORIES = ('simple_voyage', 'section_crossing', 'difference_in_travel_times', 'two_stretch_road')
 
     def __init__(self, ctx: str = '', todo: str = '', uvk = '', ans: str = '', var: dict = dict()):
         super().__init__(ctx, todo, uvk, ans, var)
 
 
-    # ----- Variables setting:    
-    def set_random_variables(self, factory_name: str):
-        """
-        Sets the base instance and random values for problems about average speed
-        according to the factory name passed.
-        """
-        match factory_name:
-            case 'SimpleVoyage':
-                self.set_variables_for_simple_voyage()
-            case 'SectionCrossing':
-                self.set_variables_for_section_crossing()
-            case 'DifferenceInTravelTimes':
-                self.set_variables_for_difference_in_travel_times()
-            case 'TwiceStretchRoad':
-                self.set_variables_for_twice_stretch_road()
-            case _:
-                raise ValueError(f"No method found for the factory '{factory_name}'")
-
-    
+    # ----- Variables setters:
     def set_variables_for_simple_voyage(self):
         subject = MobileOptions.randomMobile(mobile_can_be_person = True)
         speed = EscalarQuantity(round(subject.set_random_speed(), 1),
@@ -94,7 +76,7 @@ class AverageSpeed(Problem):
                                    UnitiesTable.METER, 'distância', False)
         
         time_difference = EscalarQuantity(
-            round(distance.value / (1/lower_speed.value - 1/higher_speed.value), 1),
+            round(distance.value * (1/lower_speed.value - 1/higher_speed.value), 1),
             UnitiesTable.SECOND, 'diferença dos tempos de viagem', True)
                 
         self.variables = {
@@ -105,7 +87,7 @@ class AverageSpeed(Problem):
         self.variables['lower_speed'].convert_to(higher_speed.unity)  # Set both speeds in the same unity avoids unessesary complexity.
 
 
-    def set_variables_for_twice_stretch_road(self):
+    def set_variables_for_two_stretch_road(self):
         subject = MobileOptions.randomMobile(mobile_can_be_person = False)
 
         speed_a = EscalarQuantity(
@@ -138,7 +120,8 @@ class AverageSpeed(Problem):
         
         distance_a.adapt_unity_randomly()
         time_b.adapt_unity_randomly()
-        # To set drawable variables of the same type with the same unity avoids unnecessary complexity:
+        
+        # Variables of the same type should have the same unity to avoid unnecessary complexity:
         speed_a.adapt_unity_randomly()
         speed_b.convert_to(speed_a.unity)
         average_speed.convert_to(speed_a.unity)
@@ -153,57 +136,12 @@ class AverageSpeed(Problem):
         match factory_name:
             case 'TwiceStretchRoad':
                 key_options = ('average_speed', 'speed_a', 'speed_b', 'distance_a', 'time_b')
+                self.unknown_variable_key = choice(key_options)
             case _:
-                key_options = [k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)]
-        self.unknown_variable_key = choice(key_options)
-    
-
-    # ----- Problem text body setting:
-    def set_todo_statement_and_answer(self):
-        """
-        Builds the to-do statement and answer. So, it can only be used after
-        set_random_unities_and_variables method.
-        """       
-        self.answer = f"{self.variables[self.unknown_variable_key]}"
+                super().raffle_unknown_variable_key()
         
-        todo_statement_head = Lexical.random_inquisitive_pronoun() if self.is_inquisitive else Lexical.random_imperative_verb()
-        subject_reference = (
-            Lexical.pronoun(self.variables['subject'].is_male)
-            if self.does_context_come_first
-            else f"{Lexical.undefined_article(self.variables['subject'].is_male)} {self.variables['subject'].name}"
-        )
-
-        subject_verb = (
-            Lexical.random_attribute_indicator_verb()
-            if self.unknown_variable_key in ('length', 'speed', 'higher_speed', 'lower_speed')
-            else Lexical.random_motion_verb(self.variables['subject'].type)
-        )
-        unk_var = self.variables[self.unknown_variable_key]
-
-        self.todo_statement = (
-                f"{todo_statement_head} {Lexical.defined_article(unk_var.is_male)} "
-                f"{unk_var.name} (em {unk_var.unity.value.symbol}) "
-                f"que {subject_reference} {subject_verb}")
-
-
-    def set_context_phrase_for(self, factory_name: str):
-        """
-        Sets the instance's context phrase for problems about average speed
-        according to the static factory name passed.
-        """        
-        match factory_name:
-            case 'SimpleVoyage':
-                self.set_context_phrase_for_simple_voyage()
-            case 'SectionCrossing':
-                self.set_context_phrase_for_section_crossing()
-            case 'DifferenceInTravelTimes':
-                self.set_context_phrase_for_difference_in_travel_times()
-            case 'TwiceStretchRoad':
-                self.set_context_phrase_for_twice_stretch_road()
-            case _:
-                raise ValueError(f"No method found for the factory '{factory_name}'")
-
-
+    
+    # ----- Context phrase setters:
     def set_context_phrase_for_simple_voyage(self):
         subject = self.variables['subject']
         context_phrase_head = (
@@ -306,7 +244,7 @@ class AverageSpeed(Problem):
                 )
 
 
-    def set_context_phrase_for_twice_stretch_road(self):
+    def set_context_phrase_for_two_stretch_road(self):
         self.does_context_come_first = True  # So problem texts shall be simpler/clearer.
         subject = self.variables['subject']
         context_first_sentence = (
@@ -364,18 +302,5 @@ class AverageSpeed(Problem):
         if factory_name not in cls.FACTORIES:
             raise ValueError(f"No method found for the factory '{factory_name}'")
         p = AverageSpeed()
-        p.set_random_variables(factory_name)
-        p.raffle_unknown_variable_key(factory_name)
-        p.set_todo_statement_and_answer()
-        p.set_context_phrase_for(factory_name)
+        p.build_problem_for(factory_name)
         return p
-
-
-# ----- Tests:
-for n in range(10):
-    p = AverageSpeed.ProblemFactory('TwiceStretchRoad')
-    print(f'{n+1}) {p}')
-
-
-#for n, p in enumerate(problems):
-    #print(f'{n+1}) {p}')

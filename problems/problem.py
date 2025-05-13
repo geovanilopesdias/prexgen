@@ -1,0 +1,105 @@
+from random import choice
+from services.lexical import Lexical
+from services.quantity import *
+
+class Problem():
+    """
+    Abstracts the idea of a problem (mathematical, physical, chemical etc.), i.e.,
+    a question or order underlined by some context that imposes
+    some sort of reasoning (commonly encompassing calculation)
+    in order to solve it (i.e., answer or attend to it).
+    """
+    FACTORIES: tuple[str, ...] = ()
+
+    def __init__(self, ctx: str = '', todo: str = '', uvk: str = '', ans: str = '', var: dict = dict()):
+        self.context_phrase = ctx
+        self.todo_statement = todo
+        self.unknown_variable_key = uvk
+        self.answer = ans
+        self.variables = var
+        self.does_context_come_first = choice((True, False))
+        self.is_inquisitive = choice((True, False))
+
+
+    def __str__(self):
+        punctuation = '?' if self.is_inquisitive else '.'
+        if self.does_context_come_first:
+            return Lexical.capitalize_after_punctuation(f"{self.context_phrase}. {self.todo_statement}{punctuation}" + '\n' + self.answer)
+        else:
+            return Lexical.capitalize_after_punctuation(f"{self.todo_statement}, {self.context_phrase}{punctuation}" + '\n' + self.answer)
+
+
+    def validate_factory_name(self, factory_name: str):
+        if factory_name not in self.FACTORIES:
+            raise NotImplementedError(f"No method found for the factory '{factory_name}'")
+
+
+    def set_random_variables(self, factory_name: str):
+        getattr(self, f"set_variables_for_{factory_name}")()
+
+
+    def set_context_phrase(self, factory_name: str):
+        getattr(self, f"set_context_phrase_for_{factory_name}")()
+
+
+    def raffle_unknown_variable_key(self):
+        """
+        Randomizes the key of the unknown variable from the EscalarQuantity instances.
+        So, it can only be used after set_random_variables method.
+        """
+        key_options = [k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)]
+        self.unknown_variable_key = choice(key_options)
+
+
+    def set_todo_statement_and_answer(self):
+        """
+        Builds the to-do statement and answer. So, it can only be used after
+        set_random_unities_and_variables method.
+        """       
+        self.answer = f"{self.variables[self.unknown_variable_key]}"
+        
+        todo_statement_head = Lexical.random_inquisitive_pronoun() if self.is_inquisitive else Lexical.random_imperative_verb()
+        subject_reference = (
+            Lexical.pronoun(self.variables['subject'].is_male)
+            if self.does_context_come_first
+            else f"{Lexical.undefined_article(self.variables['subject'].is_male)} {self.variables['subject'].name}"
+        )
+
+        subject_verb = (
+            Lexical.random_attribute_indicator_verb()
+            if self.unknown_variable_key in ('length', 'speed', 'higher_speed', 'lower_speed')
+            else Lexical.random_motion_verb(self.variables['subject'].type)
+        )
+        unk_var = self.variables[self.unknown_variable_key]
+
+        self.todo_statement = (
+                f"{todo_statement_head} {Lexical.defined_article(unk_var.is_male)} "
+                f"{unk_var.name} (em {unk_var.unity.value.symbol}) "
+                f"que {subject_reference} {subject_verb}")
+
+
+    def build_problem_for(self, factory_name: str):
+        """
+        Sets an instance of Problem with randomized attributes according to the
+        static factory name passed.
+        """
+        validate_factory_name(factory_name)
+        self.set_random_variables(factory_name)
+        self.raffle_unknown_variable_key(factory_name)
+        self.set_todo_statement_and_answer()
+        self.set_context_phrase(factory_name)
+
+
+    def ProblemFactory(cls, factory_name: str):
+        raise NotImplementedError
+    
+
+    @classmethod
+    def raffle_a_problem(cls):
+        return cls.ProblemFactory(choice(cls.FACTORIES))
+
+
+    @classmethod
+    def raffle_problem_set_of_each_type(cls, n: int = 1):
+        return [cls.ProblemFactory(name) for name in cls.FACTORIES for _ in range(n)]
+       

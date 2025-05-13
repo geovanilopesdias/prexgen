@@ -1,6 +1,5 @@
-from lexical import Lexical
-from activity import Problem
-from average_speed_problems import AverageSpeed
+from services.lexical import Lexical
+from problems.average_speed_problems import AverageSpeed
 
 class Assessment:
     SCHOOL = 'Aula Particular'
@@ -48,25 +47,16 @@ class Assessment:
 
 
     @classmethod
-    def draw_item(cls, problem: 'Problem') -> str:
-        punctuation = '?' if problem.is_inquisitive else '.'
-        if problem.does_context_come_first:
-            return Lexical.capitalize_after_punctuation(f"{problem.context_phrase} {problem.todo_statement}{punctuation}")
-        else:
-            return Lexical.capitalize_after_punctuation(f"{problem.todo_statement} {problem.context_phrase}{punctuation}")
-
-
-    @classmethod
-    def generate(cls, quantity: int = 30):
+    def generate(cls, quantity: int = 12):
         school_answers = dict()
         for c in cls.CLASSROOMS:
             for s in c['students_names']:
                 school_answers[f"{c['name']}-{s}"] = list()
                 print(cls.header(s, c['name']))
-                for index in range(1, quantity+1):
-                    problem = AverageSpeed.SectionCrossingProblem()
-                    print(f'{index}) {cls.draw_item(problem)}')
-                    school_answers[f"{c['name']}-{s}"].append(f'{index}) {problem.answer}')
+                for index in range(0, quantity):
+                    problems = AverageSpeed.raffle_problem_set_of_each_type(3)
+                    print(f'{index+1}) {problems[index]}')
+                    school_answers[f"{c['name']}-{s}"].append(f'{index+1}) {problems[index].answer}')
                 print(cls.footer())
 
         for student, student_answer in school_answers.items():
@@ -75,4 +65,3 @@ class Assessment:
                 print(answer)
                     
 Assessment.generate()
-

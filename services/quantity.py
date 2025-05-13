@@ -1,7 +1,8 @@
-from unity import *
-from lexical import Lexical
 from random import choice
 from math import hypot, sin, cos, atan2, degrees, radians
+from .unity import *
+from .lexical import Lexical
+
 
 class EscalarQuantity:
     def __init__(self, v: float, u: 'UnitiesTable', n: str, is_male: bool):
@@ -162,11 +163,3 @@ class BidimensionalVectorialQuantity:
                 theta_coord = self.polar_notation[1]
                 return f"{Lexical.format_with_comma(r_coord)} {self.unity.value.symbol} ∡ {theta_coord}°"
 
-
-
-# Tests:
-v = BidimensionalVectorialQuantity(UnitiesTable.DIMENSIONLESS, 'vetor', True)
-v.set_polar_notation(5, 225)
-print(v.to_string_as('rectangular'))
-print(v.to_string_as('polar'))
-print(v)
