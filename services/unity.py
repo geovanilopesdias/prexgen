@@ -12,6 +12,7 @@ class UnitType(Enum):
     FORCE = 'força'
     PRESSURE = 'pressão'
     ENERGY = 'energia'
+    ELECTRIC_CHARGE = 'carga elétrica'
 
 
 
@@ -50,12 +51,19 @@ class UnitiesTable(Enum):
 
     KILOGRAM = Unity('quilograma', 'kg', UnitType.MASS, 1.0)
     GRAM = Unity('quilograma', 'kg', UnitType.MASS, 1e-3)
-    MILIGRAM = Unity('quilograma', 'kg', UnitType.MASS, 1e-6)
+    MILIGRAM = Unity('quilograma', 'mg', UnitType.MASS, 1e-6)
     METRIC_TONNE = Unity('tonelada', 'ton', UnitType.MASS, 1e3)
 
     NEWTON = Unity('newton', 'N', UnitType.FORCE, 1.0)
 
     JOULE = Unity('joule', 'J', UnitType.ENERGY, 1.0)
+    KILOWATT_HOUR = Unity('kilowatt-hora', 'kWh', UnitType.ENERGY, 3.6e6)
+    BRITISH_THERMAL_UNITY = Unity('unidade térmica britânica', 'BTU', UnitType.ENERGY, 1055.0712)
+    CALORY = Unity('caloria', 'cal', UnitType.ENERGY, 4.184)
+    ERG = Unity('erg', 'erg', UnitType.ENERGY, 1E-7)
+    ELETRON_VOLT = Unity('volt', 'V', UnitType.ENERGY, 1.6022e-19)
+
+    COULOMB = Unity('coulomb', 'C', UnitType.ELECTRIC_CHARGE, 1.0)
     
 
     def __str__(self):

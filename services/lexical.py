@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 import locale
 from random import choice
@@ -10,6 +11,13 @@ class Lexical:
     Service class to encapsulate grammar and syntactic functions and rafflers for different
     syntactic expressions.
     """
+    class ChangingMode(Enum):
+        GENERIC = 'GENERIC'
+        INCREASE = 'INCREASE'
+        DECREASE = 'DECREASE'
+        
+    
+    
     def capitalize_after_punctuation(phrase: str):
         punc_filter = re.compile('([.!?]\s*)')
         splitted_phrase = punc_filter.split(phrase)
@@ -28,7 +36,17 @@ class Lexical:
 
 
     def pronoun(is_male: bool):
+        """
+        Returns 'ele' or 'ela' according to the gender passed.
+        """
         return 'ele' if is_male else 'ela'
+
+
+    def possessive_pronoun(is_male: bool):
+        """
+        Returns 'seu' or 'sua' according to the gender passed.
+        """
+        return 'seu' if is_male else 'sua'
 
 
     def random_inquisitive_pronoun():  # Avoid the use of gender!
@@ -56,6 +74,18 @@ class Lexical:
         return choice(verbs)
 
 
+    @classmethod
+    def random_verb_for_changing(cls, mode: 'ChangingMode'):
+        match mode:
+            case cls.ChangingMode.GENERIC:
+                verbs = ('altera', 'modifica', 'muda')
+            case cls.ChangingMode.INCREASE:
+                verbs = ('aumenta', 'cresce', 'sobe')
+            case cls.ChangingMode.DECREASE:
+                verbs = ('diminui', 'reduz')          
+        return choice(verbs)
+
+
     # ----- Random adverbs
     def random_completeness_adverb():
         return choice(('completamente', 'inteiramente', 'integralmente', 'inteiramente'))
@@ -80,7 +110,6 @@ class Lexical:
         """
         return choice(('por sua vez', 'porém', 'entretanto', 'contudo', 'todavia', 'no entanto'))
     
-
 
     def random_verb_to_present(variable: str, mob_type: 'MobileTypes'):
         if variable != 'speed':

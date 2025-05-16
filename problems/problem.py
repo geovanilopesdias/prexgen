@@ -1,6 +1,5 @@
 from random import choice
-from services.lexical import Lexical
-from services.quantity import *
+from services import Lexical, EscalarQuantity, UnitiesTable
 
 class Problem():
     """
@@ -30,22 +29,35 @@ class Problem():
 
 
     def validate_factory_name(self, factory_name: str):
+        """
+        It raises NotImplementedError if the factory_name passed is not
+        previwed in the child class' FACTORY tuple.
+        """
         if factory_name not in self.FACTORIES:
             raise NotImplementedError(f"No method found for the factory '{factory_name}'")
 
 
     def set_random_variables(self, factory_name: str):
+        """
+        Sets the variables of the instance according to the factory name passed.
+        See the class documentation for the factory names and descriptions.
+        """
         getattr(self, f"set_variables_for_{factory_name}")()
 
 
     def set_context_phrase(self, factory_name: str):
+        """Sets the context phrase of the instance according to the factory name passed.
+        See the class documentation for the factory names and descriptions."""
         getattr(self, f"set_context_phrase_for_{factory_name}")()
 
 
     def raffle_unknown_variable_key(self):
         """
-        Randomizes the key of the unknown variable from the EscalarQuantity instances.
-        So, it can only be used after set_random_variables method.
+        Randomizes the key of the unknown variable from the EscalarQuantity instances,
+        so, it can only be used after set_random_variables method.
+
+        If some factory need specific implementation, it should be overwritten in
+        match/case block having the default case as the super method.
         """
         key_options = [k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)]
         self.unknown_variable_key = choice(key_options)
@@ -53,8 +65,8 @@ class Problem():
 
     def set_todo_statement_and_answer(self):
         """
-        Builds the to-do statement and answer. So, it can only be used after
-        set_random_unities_and_variables method.
+        Builds the to-do statement and answer, so it can only be used after
+        set_random_variables and raffle_unknown_variable_key methods.
         """       
         self.answer = f"{self.variables[self.unknown_variable_key]}"
         
@@ -83,7 +95,7 @@ class Problem():
         Sets an instance of Problem with randomized attributes according to the
         static factory name passed.
         """
-        validate_factory_name(factory_name)
+        self.validate_factory_name(factory_name)
         self.set_random_variables(factory_name)
         self.raffle_unknown_variable_key(factory_name)
         self.set_todo_statement_and_answer()
@@ -96,7 +108,7 @@ class Problem():
 
     @classmethod
     def raffle_a_problem(cls):
-        return cls.ProblemFactory(choice(cls.FACTORIES))
+        return cls.ProblemFactory(choice(cls.FACTORIES,))
 
 
     @classmethod

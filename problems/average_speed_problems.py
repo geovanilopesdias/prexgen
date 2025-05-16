@@ -1,27 +1,49 @@
 from random import choice, uniform
 from .problem import Problem
-from services.quantity import EscalarQuantity
-from services.lexical import Lexical
-from services.unity import *
-from services.mobile import *
-
-
-# To-do list:
-### DifferenceInTravelTimes appears to not drawing variables coherently (the calculations are wrong).
+from services import *
 
 class AverageSpeed(Problem):   
     """
-    Abstracts situational problems solveble by the definition of average speed,
-    i.e., the equation v = d/t. It currrently can draw up to 240 (3*4*4*5) different
-    problems, regardless of the variable values and unities randomization.
+    Abstracts situational problems solvable by the definition of average speed.
+    
+    Factory descriptions and proto-text body in Portuguese:
+    - simple_voyage: a single segment trip, such as
+        "Calcula a distância duma moto que viaja a v km/h por 5 min". 
+    - section_crossing: a crossing of a bridge or tunnel where the
+        mobile's length is relevant, as in:
+        "Um trem com T m atravessa uma ponte de P m a V km/h. Calcula o tempo de travessia". 
+    - round_trip: a two-speed trip situation of the same road; for example:
+        "Uma moto viaja numa estrada de D km a duas velocidades diferentes: a V1 e V2 km/h.
+         Calcula a diferença nos tempos de viagem."
+    - two_stretch_road: a two-stretch road with different speeds, distance and times:
+        "Um trem percorre dois trechos A e B. O trecho A, de Da km, é feito com Va km/h,
+         já o trecho B é feito em T min com Vb km/h. Calcula a velocidade média da viagem"
     """
-    FACTORIES = ('simple_voyage', 'section_crossing', 'difference_in_travel_times', 'two_stretch_road')
+    FACTORIES = ('simple_voyage', 'section_crossing', 'round_trip', 'two_stretch_road')
 
     def __init__(self, ctx: str = '', todo: str = '', uvk = '', ans: str = '', var: dict = dict()):
         super().__init__(ctx, todo, uvk, ans, var)
 
 
-    # ----- Variables setters:
+    @classmethod
+    def ProblemFactory(cls, factory_name: str) -> 'AverageSpeed':
+        if factory_name not in cls.FACTORIES:
+            raise ValueError(f"No method found for the factory '{factory_name}'")
+        p = AverageSpeed()
+        p.build_problem_for(factory_name)
+        return p
+
+    
+    def raffle_unknown_variable_key(self, factory_name: str):
+        match factory_name:
+            case 'TwiceStretchRoad':
+                key_options = ('average_speed', 'speed_a', 'speed_b', 'distance_a', 'time_b')
+                self.unknown_variable_key = choice(key_options)
+            case _:
+                super().raffle_unknown_variable_key()
+        
+    
+    # ----- Simple voyage:
     def set_variables_for_simple_voyage(self):
         subject = MobileOptions.randomMobile(mobile_can_be_person = True)
         speed = EscalarQuantity(round(subject.set_random_speed(), 1),
@@ -35,6 +57,34 @@ class AverageSpeed(Problem):
         EscalarQuantity.adapt_all_unities_in(self.variables)
 
 
+    def set_context_phrase_for_simple_voyage(self):
+        subject = self.variables['subject']
+        context_phrase_head = (
+            f"{Lexical.undefined_article(subject.is_male)} {subject.name}"
+            if self.does_context_come_first
+            else f"{Lexical.random_condition_articulator()} {Lexical.pronoun(subject.is_male)}"
+        )
+        
+        match self.unknown_variable_key:
+            case 'speed':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_motion_verb(subject.type)} {Lexical.random_distance_adverb()} "
+                    f"{self.variables['distance']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
+                
+            case 'distance':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_verb_to_present('speed', subject.type)} "
+                    f"{self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
+
+            case 'time':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_verb_to_present('speed', subject.type)} "
+                    f"{self.variables['speed']} {Lexical.random_distance_adverb()} {self.variables['distance']}"
+                )
+
+    #Section crossing
     def set_variables_for_section_crossing(self):
         subject = MobileOptions.randomMobile(mobile_can_be_person = False)        
         subject_length = EscalarQuantity(
@@ -61,7 +111,48 @@ class AverageSpeed(Problem):
         self.variables = {'subject': subject, 'section_length': section_length, 'subject_length':subject_length, 'section': section, 'speed': speed, 'time': time}
 
 
-    def set_variables_for_difference_in_travel_times(self):
+    def set_context_phrase_for_section_crossing(self):
+        subject = self.variables['subject']  # instance of Mobile
+        sub_len = self.variables['subject_length']  # instance of EscalarQuantity
+        section = self.variables['section']  # dict
+        sec_len = self.variables['section_length']
+        context_phrase_head = (
+            f"{Lexical.undefined_article(subject.is_male)} {subject.name}"
+            if self.does_context_come_first
+            else f"{Lexical.random_condition_articulator()} {Lexical.pronoun(subject.is_male)}"
+        )
+
+        match self.unknown_variable_key:
+            case 'speed':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
+                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
+                    f"{section['name']} de {sec_len} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
+
+            case 'section_length':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
+                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
+                    f"{section['name']} a {self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
+
+            case 'subject_length':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
+                    f"{section['name']} de {sec_len} a {self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
+                )
+
+            case 'time':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
+                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
+                    f"{section['name']} de {sec_len} a {self.variables['speed']}"
+                )
+
+
+    # Difference in travel times:
+    def set_variables_for_round_trip(self):
         subject = MobileOptions.randomMobile(mobile_can_be_person = False)        
         
         higher_speed = EscalarQuantity(
@@ -87,6 +178,40 @@ class AverageSpeed(Problem):
         self.variables['lower_speed'].convert_to(higher_speed.unity)  # Set both speeds in the same unity avoids unessesary complexity.
 
 
+    def set_context_phrase_for_round_trip(self):
+        self.does_context_come_first = True  # So problem texts shall be simpler/clearer.
+        subject = self.variables['subject']
+        context_phrase_head = f"{Lexical.undefined_article(subject.is_male)} {subject.name} {Lexical.random_motion_verb(subject.type)}"
+
+        match self.unknown_variable_key:
+            case 'higher_speed':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_distance_adverb()} "
+                    f"{self.variables['distance']} a duas velocidades diferentes, sendo a menor {self.variables['lower_speed']}. "
+                    f"{Lexical.random_condition_articulator()} a {self.variables['time_difference'].name} foi de {self.variables['time_difference']},"
+                )
+
+            case 'lower_speed':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_distance_adverb()} "
+                    f"{self.variables['distance']} a duas velocidades diferentes, sendo a maior {self.variables['higher_speed']}. "
+                    f"{Lexical.random_condition_articulator()} a {self.variables['time_difference'].name} foi de {self.variables['time_difference']},"
+                )
+
+            case 'distance':
+                self.context_phrase = (
+                    f"{context_phrase_head} sob duas velocidades diferentes: "
+                    f"{self.variables['lower_speed']} e {self.variables['higher_speed']}. "
+                    f"{Lexical.random_condition_articulator()} a {self.variables['time_difference'].name} foi de {self.variables['time_difference']},"
+                )
+
+            case 'time_difference':
+                self.context_phrase = (
+                    f"{context_phrase_head} {Lexical.random_distance_adverb()} "
+                    f"{self.variables['distance']} a duas velocidades diferentes: {self.variables['lower_speed']} e {self.variables['higher_speed']},"
+                )
+
+    # Two-stretch Road
     def set_variables_for_two_stretch_road(self):
         subject = MobileOptions.randomMobile(mobile_can_be_person = False)
 
@@ -131,118 +256,6 @@ class AverageSpeed(Problem):
             'distance_a': distance_a, 'distance_b': distance_b, 'time_a': time_a, 'time_b': time_b
             }
         
-
-    def raffle_unknown_variable_key(self, factory_name: str):
-        match factory_name:
-            case 'TwiceStretchRoad':
-                key_options = ('average_speed', 'speed_a', 'speed_b', 'distance_a', 'time_b')
-                self.unknown_variable_key = choice(key_options)
-            case _:
-                super().raffle_unknown_variable_key()
-        
-    
-    # ----- Context phrase setters:
-    def set_context_phrase_for_simple_voyage(self):
-        subject = self.variables['subject']
-        context_phrase_head = (
-            f"{Lexical.undefined_article(subject.is_male)} {subject.name}"
-            if self.does_context_come_first
-            else f"{Lexical.random_condition_articulator()} {Lexical.pronoun(subject.is_male)}"
-        )
-        
-        match self.unknown_variable_key:
-            case 'speed':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_motion_verb(subject.type)} {Lexical.random_distance_adverb()} "
-                    f"{self.variables['distance']} {Lexical.random_interval_adverb()} {self.variables['time']}"
-                )
-                
-            case 'distance':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_verb_to_present('speed', subject.type)} "
-                    f"{self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
-                )
-
-            case 'time':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_verb_to_present('speed', subject.type)} "
-                    f"{self.variables['speed']} {Lexical.random_distance_adverb()} {self.variables['distance']}"
-                )
-
-
-    def set_context_phrase_for_section_crossing(self):
-        subject = self.variables['subject']  # instance of Mobile
-        sub_len = self.variables['subject_length']  # instance of EscalarQuantity
-        section = self.variables['section']  # dict
-        sec_len = self.variables['section_length']
-        context_phrase_head = (
-            f"{Lexical.undefined_article(subject.is_male)} {subject.name}"
-            if self.does_context_come_first
-            else f"{Lexical.random_condition_articulator()} {Lexical.pronoun(subject.is_male)}"
-        )
-
-        match self.unknown_variable_key:
-            case 'speed':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
-                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
-                    f"{section['name']} de {sec_len} {Lexical.random_interval_adverb()} {self.variables['time']}"
-                )
-
-            case 'section_length':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
-                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
-                    f"{section['name']} a {self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
-                )
-
-            case 'subject_length':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
-                    f"{section['name']} de {sec_len} a {self.variables['speed']} {Lexical.random_interval_adverb()} {self.variables['time']}"
-                )
-
-            case 'time':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_attribute_indicator_verb()} {Lexical.undefined_article(subject.is_male)} "
-                    f"{sub_len.name.split()[0]} de {sub_len} e {Lexical.random_crossing_verb()} {Lexical.undefined_article(section['is_male'])} "
-                    f"{section['name']} de {sec_len} a {self.variables['speed']}"
-                )
-
-    
-    def set_context_phrase_for_difference_in_travel_times(self):
-        self.does_context_come_first = True  # So problem texts shall be simpler/clearer.
-        subject = self.variables['subject']
-        context_phrase_head = f"{Lexical.undefined_article(subject.is_male)} {subject.name} {Lexical.random_motion_verb(subject.type)}"
-
-        match self.unknown_variable_key:
-            case 'higher_speed':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_distance_adverb()} "
-                    f"{self.variables['distance']} a duas velocidades diferentes, sendo a menor {self.variables['lower_speed']}. "
-                    f"{Lexical.random_condition_articulator()} a {self.variables['time_difference'].name} foi de {self.variables['time_difference']}"
-                )
-
-            case 'lower_speed':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_distance_adverb()} "
-                    f"{self.variables['distance']} a duas velocidades diferentes, sendo a maior {self.variables['higher_speed']}. "
-                    f"{Lexical.random_condition_articulator()} a {self.variables['time_difference'].name} foi de {self.variables['time_difference']}"
-                )
-
-            case 'distance':
-                self.context_phrase = (
-                    f"{context_phrase_head} sob duas velocidades diferentes: "
-                    f"{self.variables['lower_speed']} e {self.variables['higher_speed']}. "
-                    f"{Lexical.random_condition_articulator()} a {self.variables['time_difference'].name} foi de {self.variables['time_difference']}"
-                )
-
-            case 'time_difference':
-                self.context_phrase = (
-                    f"{context_phrase_head} {Lexical.random_distance_adverb()} "
-                    f"{self.variables['distance']} a duas velocidades diferentes: {self.variables['lower_speed']} e {self.variables['higher_speed']}"
-                )
-
 
     def set_context_phrase_for_two_stretch_road(self):
         self.does_context_come_first = True  # So problem texts shall be simpler/clearer.
@@ -295,12 +308,3 @@ class AverageSpeed(Problem):
                     f"no trecho B {Lexical.pronoun(subject.is_male)} {Lexical.random_motion_verb(subject)} a {self.variables['speed_b']}. "
                     f"{Lexical.random_condition_articulator()} a sua {self.variables['average_speed'].name} é de {self.variables['average_speed']}, "
                 )
-
-
-    @classmethod
-    def ProblemFactory(cls, factory_name: str) -> 'AverageSpeed':
-        if factory_name not in cls.FACTORIES:
-            raise ValueError(f"No method found for the factory '{factory_name}'")
-        p = AverageSpeed()
-        p.build_problem_for(factory_name)
-        return p

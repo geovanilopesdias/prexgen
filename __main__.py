@@ -1,5 +1,4 @@
-from services.lexical import Lexical
-from problems.average_speed_problems import AverageSpeed
+from problems import *
 
 class Assessment:
     SCHOOL = 'Aula Particular'
@@ -54,7 +53,7 @@ class Assessment:
                 school_answers[f"{c['name']}-{s}"] = list()
                 print(cls.header(s, c['name']))
                 for index in range(0, quantity):
-                    problems = AverageSpeed.raffle_problem_set_of_each_type(3)
+                    problems = AverageSpeed.raffle_problem_set_of_each_type(12)
                     print(f'{index+1}) {problems[index]}')
                     school_answers[f"{c['name']}-{s}"].append(f'{index+1}) {problems[index].answer}')
                 print(cls.footer())
