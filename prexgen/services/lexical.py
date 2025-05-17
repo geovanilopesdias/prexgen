@@ -15,7 +15,11 @@ class Lexical:
         GENERIC = 'GENERIC'
         INCREASE = 'INCREASE'
         DECREASE = 'DECREASE'
-        
+    
+    class VerbTense(Enum):
+        PRESENT = 'PRESENT'
+        PAST = 'PAST'
+        FUTURE = 'FUTURE'
     
     
     def capitalize_after_punctuation(phrase: str):
@@ -26,6 +30,7 @@ class Lexical:
 
     def format_with_comma(value: float) -> str:
         return locale.format_string("%.1f", value)
+
 
     def undefined_article(is_male: bool):
         return 'um' if is_male else 'uma'
@@ -58,8 +63,15 @@ class Lexical:
         return choice(('calcula', 'determina'))
 
 
-    def random_attribute_indicator_verb():
-        return choice(('tem', 'possui'))
+    @classmethod
+    def random_attribute_indicator_verb(cls, vt: 'VerbTense' = VerbTense.PRESENT):
+        match vt:
+            case cls.VerbTense.PRESENT:
+                return choice(('tem', 'possui'))
+            case cls.VerbTense.PAST:
+                return choice(('tinha', 'possuía'))
+            case cls.VerbTense.FUTURE:
+                return choice(('terá', 'possuirá'))
 
 
     def random_crossing_verb():

@@ -23,9 +23,9 @@ class Problem():
     def __str__(self):
         punctuation = '?' if self.is_inquisitive else '.'
         if self.does_context_come_first:
-            return Lexical.capitalize_after_punctuation(f"{self.context_phrase}. {self.todo_statement}{punctuation}" + '\n' + self.answer)
+            return Lexical.capitalize_after_punctuation(f"{self.context_phrase}. {self.todo_statement}{punctuation}")
         else:
-            return Lexical.capitalize_after_punctuation(f"{self.todo_statement}, {self.context_phrase}{punctuation}" + '\n' + self.answer)
+            return Lexical.capitalize_after_punctuation(f"{self.todo_statement}, {self.context_phrase}{punctuation}")
 
 
     def validate_factory_name(self, factory_name: str):
@@ -76,18 +76,27 @@ class Problem():
             if self.does_context_come_first
             else f"{Lexical.undefined_article(self.variables['subject'].is_male)} {self.variables['subject'].name}"
         )
+        match self.unknown_variable_key:
+            case 'length' | 'speed':
+                subject_tail = (
+                    f"que {subject_reference} {Lexical.random_attribute_indicator_verb()}"
+                )
+            case 'distance' | 'time':
+                subject_tail = (
+                    f"que {subject_reference} {Lexical.random_motion_verb(self.variables['subject'].type)}"
+                )
+            case 'higher_speed' | 'lower_speed':
+                subject_tail = (
+                    f"que {subject_reference} {Lexical.random_attribute_indicator_verb(Lexical.VerbTense.PAST)}"
+                )
+            case _:
+                subject_tail = str()
 
-        subject_verb = (
-            Lexical.random_attribute_indicator_verb()
-            if self.unknown_variable_key in ('length', 'speed', 'higher_speed', 'lower_speed')
-            else Lexical.random_motion_verb(self.variables['subject'].type)
-        )
         unk_var = self.variables[self.unknown_variable_key]
-
         self.todo_statement = (
                 f"{todo_statement_head} {Lexical.defined_article(unk_var.is_male)} "
-                f"{unk_var.name} (em {unk_var.unity.value.symbol}) "
-                f"que {subject_reference} {subject_verb}")
+                f"{unk_var.name} (em {unk_var.unity.value.symbol}) {subject_tail}"
+        )
 
 
     def build_problem_for(self, factory_name: str):
