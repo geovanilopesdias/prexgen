@@ -47,14 +47,17 @@ class EscalarQuantity:
         to a more proper quantity expression, avoiding really small ou big
         odd/ugly values, but randomly between the enumerator.
         """
+        if self.unity.value.si_eq is None:
+            return
+
         match self.unity.value.type:
             case UnitType.MASS:
                 self.convert_to(UnitiesTable.KILOGRAM)
                 if self.value >= 1_000:
                     self.convert_to(UnitiesTable.METRIC_TONNE)
-                elif self.value <= 1e-3 and self.value > 1e-6:
+                elif self.value < 1 and self.value > 1e-4:
                     self.convert_to(UnitiesTable.GRAM)
-                elif self.value <= 1e-6 and self.value > 1e-9:
+                elif self.value <= 1e-4 and self.value > 1e-7:
                     self.convert_to(UnitiesTable.MILIGRAM)
                 else:
                     return
@@ -84,6 +87,14 @@ class EscalarQuantity:
                     #UnitiesTable.MILE_PER_HOUR
                     )))
                 return
+
+            case UnitType.CONCENTRATION:
+                if self.value < .01 and self.value >= .001:
+                    self.convert_to(UnitiesTable.PPM)
+                elif self.value < .001:
+                    self.convert_to(UnitiesTable.PPB)
+                else:
+                    return
 
             case _:
                 return

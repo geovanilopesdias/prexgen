@@ -31,6 +31,8 @@ class Assessment:
                 return Uvrm.raffle_problem_set_of_each_type(qnt_of_each)
             case SystemFactories.MECH_ENERGY_CONS:
                 return MechanicalEnergyConservation.raffle_problem_set_of_each_type(qnt_of_each)
+            case SystemFactories.CONCENTRATION:
+                return Concentration.raffle_problem_set_of_each_type(qnt_of_each)
 
 
     @classmethod

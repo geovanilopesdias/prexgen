@@ -6,7 +6,7 @@ class Problem():
     Abstracts the idea of a problem (mathematical, physical, chemical etc.), i.e.,
     a question or order underlined by some context that imposes
     some sort of reasoning (commonly encompassing calculation)
-    in order to solve it (i.e., answer or attend to it).
+    in order to solve it (i.e., answer it or attend to it).
     """
     FACTORIES: tuple[str, ...] = ()
 
@@ -27,11 +27,7 @@ class Problem():
             if self.does_context_come_first
             else f"{self.todo_statement}{self.context_phrase}{p}"
         )
-        # if self.does_context_come_first:
-        #     return Lexical.capitalize_after_punctuation(f"{self.context_phrase}{self.todo_statement}{punctuation}")
-        # else:
-        #     return Lexical.capitalize_after_punctuation(f"{self.todo_statement}{self.context_phrase}{punctuation}")
-
+        
 
     def validate_factory_name(self, factory_name: str):
         """
@@ -62,7 +58,7 @@ class Problem():
         so, it can only be used after set_random_variables method.
 
         If some factory need specific implementation, it should be overwritten in
-        match/case block having the default case as the super method.
+        match/case block having the super method as the default case.
         """
         key_options = [k for k, v in self.variables.items() if isinstance(v, EscalarQuantity)]
         self.unknown_variable_key = choice(key_options)
@@ -123,7 +119,7 @@ class Problem():
 
     @classmethod
     def raffle_a_problem(cls):
-        return cls.ProblemFactory(choice(cls.FACTORIES,))
+        return cls.ProblemFactory(choice(cls.FACTORIES))
 
 
     @classmethod

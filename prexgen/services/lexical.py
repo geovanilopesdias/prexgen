@@ -30,7 +30,7 @@ class Lexical:
 
 
     def format_with_comma(value: float) -> str:
-        return locale.format_string("%.1f", value)
+        return locale.format_string("%.2f", value)
 
 
     def undefined_article(is_male: bool):

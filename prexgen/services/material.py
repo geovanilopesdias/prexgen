@@ -36,8 +36,8 @@ class Material:
             raise ValueError("Total concentration must not exceed 100%.")
 
 
-    def get_random_solute(self) -> list:
-        return choice(self.composition.items())
+    def get_random_solute(self) -> tuple:
+        return choice(list(self.composition.items()))
 
 
 
@@ -45,45 +45,45 @@ class MaterialOptions(Enum):
     # Rocks:
     BAUXITE = Material(
         MaterialTypes.ROCK, False, 'bauxita',
-        {'óxido de alumínio': 50, 'água': 19, 'sílica': 8, 'óxido de ferro': 15, 'dióxido de titânio': 3})
+        {'óxido de alumínio': 50.0, 'água': 19.0, 'sílica': 8.0, 'óxido de ferro': 15.0, 'dióxido de titânio': 3.0})
     HEMATITE = Material(
         MaterialTypes.ROCK, False, 'hematita',
-        {'ferro': 70, 'oxigênio': 30})
+        {'ferro': 70.0, 'oxigênio': 30.0})
     GALENA = Material(
         MaterialTypes.ROCK, False, 'galena',
         {'chumbo': 86.6, 'enxofre': 13.4})
     CHALCOPYRITE = Material(
         MaterialTypes.ROCK, False, 'calcopirita',
-        {'cobre': 34.6, 'ferro': 30.4, 'enxofre': 35})
+        {'cobre': 34.6, 'ferro': 30.4, 'enxofre': 35.0})
 
     # Alloys:
     GOLD_18K = Material(
         MaterialTypes.METAL_ALLOY, True, 'ouro 18K',
-        {'ouro': 75, 'prata': 25})
+        {'ouro': 75.0, 'prata': 25.0})
     GOLD_10K = Material(
         MaterialTypes.METAL_ALLOY, True, 'ouro 10K',
-        {'ouro': 42, 'prata': 58})
+        {'ouro': 42.0, 'prata': 58.0})
     ROSE_GOLD = Material(
         MaterialTypes.METAL_ALLOY, True, 'ouro rosé',
-        {'ouro': 37, 'prata': 20, 'cobre': 43})
+        {'ouro': 37.0, 'prata': 20.0, 'cobre': 43.0})
     ALUZINC = Material(
         MaterialTypes.METAL_ALLOY, True, 'aluzinco',
-        {'alumínio': 55, 'zinco': 43.5, 'silício': 1.5})
+        {'alumínio': 55.0, 'zinco': 43.5, 'silício': 1.5})
     BRONZE = Material(
         MaterialTypes.METAL_ALLOY, True, 'bronze',
-        {'cobre': 67, 'estanho': 33})
+        {'cobre': 67.0, 'estanho': 33.0})
     ALPHA_BRASS = Material(
         MaterialTypes.METAL_ALLOY, True, 'latão alfa',
-        {'cobre': 70, 'zinco': 30})
+        {'cobre': 70.0, 'zinco': 30.0})
     BETHA_BRASS = Material(
         MaterialTypes.METAL_ALLOY, True, 'latão beta',
-        {'cobre': 50, 'zinco': 50})
+        {'cobre': 50.0, 'zinco': 50.0})
     STEEL = Material(
         MaterialTypes.METAL_ALLOY, True, 'aço',
-        {'ferro': 96.5, 'carbono': 2, 'manganês': 1, 'níquel': .5})
+        {'ferro': 96.5, 'carbono': 2.0, 'manganês': 1.0, 'níquel': .5})
     STAINLESS_STEEL = Material(
         MaterialTypes.METAL_ALLOY, True, 'inox',
-        {'ferro': 73, 'cromo': 15, 'carbono': 1, 'níquel': 10, 'manganês': 1})
+        {'ferro': 73.0, 'cromo': 15.0, 'carbono': 1.0, 'níquel': 10.0, 'manganês': 1.0})
 
     # Foods:
     RICE = Material(
