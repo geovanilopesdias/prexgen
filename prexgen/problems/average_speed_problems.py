@@ -45,7 +45,7 @@ class AverageSpeed(Problem):
     
     # ----- Simple voyage:
     def set_variables_for_simple_voyage(self):
-        subject = MobileOptions.randomMobile(mobile_can_be_person = True)
+        subject = MobileOptions.random_mobile(mobile_can_be_person = True)
         speed = EscalarQuantity(round(subject.set_random_speed(), 1),
                                 UnitiesTable.METER_PER_SECOND, 'velocidade média', False)
         distance = EscalarQuantity(round(subject.set_random_distance(), 1),
@@ -86,7 +86,7 @@ class AverageSpeed(Problem):
 
     #Section crossing
     def set_variables_for_section_crossing(self):
-        subject = MobileOptions.randomMobile(mobile_can_be_person = False)        
+        subject = MobileOptions.random_mobile(mobile_can_be_person = False)        
         subject_length = EscalarQuantity(
             round(subject.set_random_length(), 1),
             UnitiesTable.METER, 'comprimento', True)
@@ -153,7 +153,7 @@ class AverageSpeed(Problem):
 
     # Difference in travel times:
     def set_variables_for_round_trip(self):
-        subject = MobileOptions.randomMobile(mobile_can_be_person = False)        
+        subject = MobileOptions.random_mobile(mobile_can_be_person = False)        
         
         higher_speed = EscalarQuantity(
             round(subject.set_random_speed(), 1),
@@ -213,7 +213,7 @@ class AverageSpeed(Problem):
 
     # Two-stretch Road
     def set_variables_for_two_stretch_road(self):
-        subject = MobileOptions.randomMobile(mobile_can_be_person = False)
+        subject = MobileOptions.random_mobile(mobile_can_be_person = False)
 
         speed_a = EscalarQuantity(
             round(subject.set_random_speed(), 1),

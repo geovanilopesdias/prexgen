@@ -16,6 +16,9 @@ class EscalarQuantity:
         """
         It changes the value and unity of the instance according to the desired_unity.
         """
+        if self.unity.value.si_eq is None or desired_unity.value.si_eq is None:
+            raise TypeError('Instance or desired unities shouldn\'t be converted between themselves.')
+        
         if self.unity.value.type != desired_unity.value.type:
             raise TypeError('Instance and desired unities type don\'t match.')
         
@@ -45,6 +48,17 @@ class EscalarQuantity:
         odd/ugly values, but randomly between the enumerator.
         """
         match self.unity.value.type:
+            case UnitType.MASS:
+                self.convert_to(UnitiesTable.KILOGRAM)
+                if self.value >= 1_000:
+                    self.convert_to(UnitiesTable.METRIC_TONNE)
+                elif self.value <= 1e-3 and self.value > 1e-6:
+                    self.convert_to(UnitiesTable.GRAM)
+                elif self.value <= 1e-6 and self.value > 1e-9:
+                    self.convert_to(UnitiesTable.MILIGRAM)
+                else:
+                    return
+
             case UnitType.LENGTH:
                 self.convert_to(UnitiesTable.METER)
                 if self.value >= 1_600:
@@ -65,7 +79,10 @@ class EscalarQuantity:
 
             case UnitType.SPEED:
                 self.convert_to(choice((
-                    UnitiesTable.METER_PER_SECOND, UnitiesTable.KILOMETER_PER_HOUR, UnitiesTable.MILE_PER_HOUR)))
+                    UnitiesTable.METER_PER_SECOND,
+                    UnitiesTable.KILOMETER_PER_HOUR,
+                    #UnitiesTable.MILE_PER_HOUR
+                    )))
                 return
 
             case _:

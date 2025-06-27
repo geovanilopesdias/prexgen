@@ -21,11 +21,16 @@ class Problem():
 
 
     def __str__(self):
-        punctuation = '?' if self.is_inquisitive else '.'
-        if self.does_context_come_first:
-            return Lexical.capitalize_after_punctuation(f"{self.context_phrase}. {self.todo_statement}{punctuation}")
-        else:
-            return Lexical.capitalize_after_punctuation(f"{self.todo_statement}, {self.context_phrase}{punctuation}")
+        p = '?' if self.is_inquisitive else '.'
+        return (
+            f"{self.context_phrase}{self.todo_statement}{p}"
+            if self.does_context_come_first
+            else f"{self.todo_statement}{self.context_phrase}{p}"
+        )
+        # if self.does_context_come_first:
+        #     return Lexical.capitalize_after_punctuation(f"{self.context_phrase}{self.todo_statement}{punctuation}")
+        # else:
+        #     return Lexical.capitalize_after_punctuation(f"{self.todo_statement}{self.context_phrase}{punctuation}")
 
 
     def validate_factory_name(self, factory_name: str):
@@ -77,17 +82,18 @@ class Problem():
             else f"{Lexical.undefined_article(self.variables['subject'].is_male)} {self.variables['subject'].name}"
         )
         match self.unknown_variable_key:
+            # subject_tail should begin with a space in order to avoid one unecessary if the tail is empty.
             case 'length' | 'speed':
                 subject_tail = (
-                    f"que {subject_reference} {Lexical.random_attribute_indicator_verb()}"
+                    f" que {subject_reference} {Lexical.random_attribute_indicator_verb()}"
                 )
             case 'distance' | 'time':
                 subject_tail = (
-                    f"que {subject_reference} {Lexical.random_motion_verb(self.variables['subject'].type)}"
+                    f" que {subject_reference} {Lexical.random_motion_verb(self.variables['subject'].type)}"
                 )
             case 'higher_speed' | 'lower_speed':
                 subject_tail = (
-                    f"que {subject_reference} {Lexical.random_attribute_indicator_verb(Lexical.VerbTense.PAST)}"
+                    f" que {subject_reference} {Lexical.random_attribute_indicator_verb(Lexical.VerbTense.PAST)}"
                 )
             case _:
                 subject_tail = str()
@@ -95,7 +101,7 @@ class Problem():
         unk_var = self.variables[self.unknown_variable_key]
         self.todo_statement = (
                 f"{todo_statement_head} {Lexical.defined_article(unk_var.is_male)} "
-                f"{unk_var.name} (em {unk_var.unity.value.symbol}) {subject_tail}"
+                f"{unk_var.name} (em {unk_var.unity.value.symbol}){subject_tail}"
         )
 
 

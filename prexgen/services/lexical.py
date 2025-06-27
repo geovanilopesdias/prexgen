@@ -1,5 +1,5 @@
 from enum import Enum
-import re
+from re import compile
 import locale
 from random import choice
 from .mobile import MobileTypes
@@ -21,11 +21,12 @@ class Lexical:
         PAST = 'PAST'
         FUTURE = 'FUTURE'
     
-    
-    def capitalize_after_punctuation(phrase: str):
-        punc_filter = re.compile('([.!?]\s*)')
-        splitted_phrase = punc_filter.split(phrase)
-        return ''.join([word.capitalize() for word in splitted_phrase])
+    def capitalize_after_punctuation(phrase: str) -> str:
+    #    phrase = phrase[:1].upper() + phrase[1:]
+    #    return sub(r'([.!?]\s*)(\w)', lambda m: m.group(1) + m.group(2).upper(), phrase)
+         punc_filter = compile('([.!?]\s*)')
+         splitted_phrase = punc_filter.split(phrase)
+         return ''.join([word.capitalize() for word in splitted_phrase])
 
 
     def format_with_comma(value: float) -> str:

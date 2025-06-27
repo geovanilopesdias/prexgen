@@ -2,6 +2,7 @@ from random import choice
 from enum import Enum
 
 class UnitType(Enum):
+    CONCENTRATION = 'concentração'
     DIMENSIONLESS = ''
     LENGTH = 'comprimento'
     TIME = 'tempo'
@@ -17,7 +18,7 @@ class UnitType(Enum):
 
 
 class Unity:
-    def __init__(self, n: str, s: str, t: 'UnitType', e: float):
+    def __init__(self, n: str, s: str, t: 'UnitType', e: float = None):
         self.name = n
         self.symbol = s
         self.type = t
@@ -50,11 +51,13 @@ class UnitiesTable(Enum):
     KILOMETER_PER_HOUR_PER_SECOND = Unity('quilômetro por hora por segundo', 'km/h∙s', UnitType.ACCELERATION, 1/3.6)
 
     KILOGRAM = Unity('quilograma', 'kg', UnitType.MASS, 1.0)
-    GRAM = Unity('quilograma', 'kg', UnitType.MASS, 1e-3)
-    MILIGRAM = Unity('quilograma', 'mg', UnitType.MASS, 1e-6)
+    GRAM = Unity('grama', 'g', UnitType.MASS, 1e-3)
+    MILIGRAM = Unity('miligrama', 'mg', UnitType.MASS, 1e-6)
     METRIC_TONNE = Unity('tonelada', 'ton', UnitType.MASS, 1e3)
 
     NEWTON = Unity('newton', 'N', UnitType.FORCE, 1.0)
+    POUND_FORCE = Unity('libra-força', 'lbf', UnitType.FORCE, 4.4482)
+    KILOGRAM_FORCE = Unity('quilograma-força', 'kgf', UnitType.FORCE, 9.8067)
 
     JOULE = Unity('joule', 'J', UnitType.ENERGY, 1.0)
     KILOWATT_HOUR = Unity('kilowatt-hora', 'kWh', UnitType.ENERGY, 3.6e6)
@@ -64,7 +67,14 @@ class UnitiesTable(Enum):
     ELETRON_VOLT = Unity('volt', 'V', UnitType.ENERGY, 1.6022e-19)
 
     COULOMB = Unity('coulomb', 'C', UnitType.ELECTRIC_CHARGE, 1.0)
+    AMPERE_HOUR = Unity('ampère-hora', 'Ah', UnitType.ELECTRIC_CHARGE, 3_600)
+    MILI_AMPERE_HOUR = Unity('miliampère-hora', 'mAh', UnitType.ELECTRIC_CHARGE, 3.6)
+    ELECTRON_CHARGE = Unity('carga do elétron', 'ē', UnitType.ELECTRIC_CHARGE, 1.6021e-19)
     
+    MASS_PERCENTAGE = Unity('concentração percentual em massa', '%m/m', UnitType.CONCENTRATION, 1.0)
+    VOLUME_PERCENTAGE = Unity('concentração percentual em volume', '%v/v', UnitType.CONCENTRATION)
+    PPM = Unity('partes por milhão', 'ppm', UnitType.CONCENTRATION, 1e-4)
+    PPB = Unity('partes por bilhão', 'ppb', UnitType.CONCENTRATION, 1e-7)
 
     def __str__(self):
         return self.value.__str__()
